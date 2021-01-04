@@ -126,8 +126,8 @@ def find_number_bound_enhanced(digit_img):
             # Update Xs, Xe variables:
             i1 = i
             i2 = side - i
-            i1_valid = c1 + c2 > 0
-            i2_valid = c3 + c4 > 0
+            i1_valid = c1 or c2 > 0
+            i2_valid = c3 or c4 > 0
             if i1_valid and i1 < xs:
                 xs = i1
             if i2_valid and i2 < xs:
@@ -140,8 +140,8 @@ def find_number_bound_enhanced(digit_img):
             # Update Ys, Ye variables:
             j1 = j
             j2 = side - j
-            j1_valid = c1 + c3 > 0
-            j2_valid = c2 + c4 > 0
+            j1_valid = c1 or c3 > 0
+            j2_valid = c2 or c4 > 0
             if j1_valid and j1 < ys:
                 ys = j1
             if j2_valid and j2 < ys:
