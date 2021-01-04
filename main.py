@@ -2,7 +2,8 @@ import operator
 import cv2 as cv
 import ModelsUtil
 import numpy as np
-from Solver.fast_solve import solve, print_board
+from Solver.slow_solve import solve
+from Solver.fast_solve import print_board
 from Utils import show, equalize_image, normalize_sudoko_board, extract_digits, project_solution_on_frame
 
 
@@ -18,7 +19,7 @@ def load_numbers():
         numbers[i] = padded
     return numbers
 
-# load_numbers()
+
 def pre_process_gray_image(grayed_frame, dilate=True):
     """Apply Gaussian blur, Adaptive thresholding and dilation with Cross filter"""
     proc = cv.GaussianBlur(grayed_frame, (9, 9), 0)
