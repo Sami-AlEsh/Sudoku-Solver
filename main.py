@@ -2,8 +2,8 @@ import operator
 import cv2 as cv
 import ModelsUtil
 import numpy as np
-from Solver.slow_solve import solve
-from Solver.fast_solve import print_board
+# from Solver.slow_solve import solve, print_board
+from Solver.fast_solve import solve, print_board
 from Utils import show, equalize_image, normalize_sudoko_board, extract_digits, project_solution_on_frame
 
 
