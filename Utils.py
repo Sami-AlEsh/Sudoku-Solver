@@ -107,11 +107,58 @@ def find_number_bound(digit_img):
     return xs, xe, ys, ye
 
 
+def find_number_bound_enhanced(digit_img):
+    # Note this functions assumes there is a number(white area) in image
+    xs = digit_img.shape[1] - 1
+    xe = 0
+    ys = digit_img.shape[0] - 1
+    ye = 0
+    quarter = digit_img.shape[0] // 2  # 16
+    side = digit_img.shape[0] - 1  # 31 (because counting from zero)
+    for i in range(quarter):
+        for j in range(quarter):
+            # Get 4 points
+            c1 = digit_img[i][j]
+            c2 = digit_img[i][side - j]
+            c3 = digit_img[side - i][j]
+            c4 = digit_img[side - i][side - j]
+
+            # Update Xs, Xe variables:
+            i1 = i
+            i2 = side - i
+            i1_valid = c1 + c2 > 0
+            i2_valid = c3 + c4 > 0
+            if i1_valid and i1 < xs:
+                xs = i1
+            if i2_valid and i2 < xs:
+                xs = i2
+            if i1_valid and i1 > xe:
+                xe = i1
+            if i2_valid and i2 > xe:
+                xe = i2
+
+            # Update Ys, Ye variables:
+            j1 = j
+            j2 = side - j
+            j1_valid = c1 + c3 > 0
+            j2_valid = c2 + c4 > 0
+            if j1_valid and j1 < ys:
+                ys = j1
+            if j2_valid and j2 < ys:
+                ys = j2
+            if j1_valid and j1 > ye:
+                ye = j1
+            if j2_valid and j2 > ye:
+                ye = j2
+
+    return xs, xe, ys, ye
+
+
 def center_resize_digit_in_image(digit_img, padding):
     # Slice the digit
     # [x, y, w, h] = cv.boundingRect(box)
     # digit_box = digit_img[x:x+h, y:y+w]
-    xs, xe, ys, ye = find_number_bound(digit_img)
+    xs, xe, ys, ye = find_number_bound_enhanced(digit_img)
     h = xe - xs
     w = ye - ys
     digit_box = digit_img[xs:xe, ys:ye]
