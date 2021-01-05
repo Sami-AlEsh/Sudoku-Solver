@@ -1,7 +1,5 @@
 import cv2 as cv
 import numpy as np
-from imutils import contours
-from imutils.contours import sort_contours
 
 
 def show(name, image, pause=True):
@@ -15,7 +13,7 @@ clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 def equalize_image(image, mode):
     if mode == 'HIST':
         return cv.equalizeHist(image)
-    elif mode == 'CLAHE': # CLAHE: Contrast Limited Adaptive Histogram Equalization
+    elif mode == 'CLAHE':  # CLAHE: Contrast Limited Adaptive Histogram Equalization
         return clahe.apply(image)
     else:
         print(f'Unknown equlizer mode/{mode}/')
@@ -419,57 +417,6 @@ def extract_digits(sudoko_board, model):
         decoded_digits.append(decoded_row_digits)
     return decoded_digits, digits
 
-def extract_numbers(image):
-    # Load image, grayscale, and adaptive threshold
-    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 57, 5)
-
-    # Filter out all numbers and noise to isolate only boxes
-    cnts = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-    for c in cnts:
-        area = cv.contourArea(c)
-        if area < 1000:
-            cv.drawContours(thresh, [c], -1, (0, 0, 0), -1)
-
-    # Fix horizontal and vertical lines
-    vertical_kernel = cv.getStructuringElement(cv.MORPH_RECT, (1, 5))
-    thresh = cv.morphologyEx(thresh, cv.MORPH_CLOSE, vertical_kernel, iterations=9)
-    horizontal_kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 1))
-    thresh = cv.morphologyEx(thresh, cv.MORPH_CLOSE, horizontal_kernel, iterations=4)
-
-    # Sort by top to bottom and each row by left to right
-    invert = 255 - thresh
-    cnts = cv.findContours(invert, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-    (cnts, _) = sort_contours(cnts, method="top-to-bottom")
-
-    sudoku_rows = []
-    row = []
-    for (i, c) in enumerate(cnts, 1):
-        area = cv.contourArea(c)
-        if area < 50000:
-            row.append(c)
-            if i % 9 == 0:
-                (cnts, _) = sort_contours(row, method="left-to-right")
-                sudoku_rows.append(cnts)
-                row = []
-    # Iterate through each box
-    cell = []
-    for row in sudoku_rows:
-        for c in row:
-            mask = np.zeros(image.shape, dtype=np.uint8)
-            x, y, w, h = cv.boundingRect(c)
-            img = image[y:y + h, x:x + w]
-            cell.append(img)
-            cell.append(cv.rectangle(image, (x, y), (x + w, y + h), (36, 255, 12), 2))
-            cv.drawContours(mask, [c], -1, (255, 255, 255), -1)
-            result = cv.bitwise_and(image, mask)
-            result[mask == 0] = 255
-            cell.append(result)
-            # cv.imshow('result', result)
-            # cv.waitKey(0)
-
 
 def project_solution_on_frame(resultion, solved_sudoko, digits_list, corners, frame, numbers):
     def generate_solved_square_image(solved_sudoko, digits_list, numbers):
@@ -512,13 +459,3 @@ def project_solution_on_frame(resultion, solved_sudoko, digits_list, corners, fr
     final_img = cv.add(img1_bg, img2_fg)
     return final_img
 
-
-def get_non_intersect_items(A, B):
-    res = list()
-    for i in range(9):
-        for j in range(9):
-            if len(B[i][j]) == 0:
-                res.append(A[i][j][0])
-            else:
-                res.append(0)
-    return res

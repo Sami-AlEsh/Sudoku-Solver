@@ -1,7 +1,6 @@
 import ModelsUtil
 import cv2 as cv
 import numpy as np
-
 from Utils import show
 
 
@@ -74,7 +73,6 @@ def generate_numbers_dataset():
     print('generated dataset shape:', dataset.shape)
     return dataset
 
-
 # Image itself as a feature
 def generator_demo1():
     """Demo1: split data to train/test , then train KNN model on trainset then validate using test data. Features
@@ -86,46 +84,6 @@ def generator_demo1():
     print(testset.shape)
 
     # Generate features:
-    trainset = trainset.reshape(-1, 468).astype(np.float32)
-    print('train data:', trainset.shape)
-    testset = testset.reshape(-1, 468).astype(np.float32)
-    print('test data:', testset.shape)
-
-    # Testing:
-    labels = np.arange(1, 10)
-    train_labels = []
-    for ls in [labels] * 14:
-        for item in ls:
-            train_labels.append([item])
-
-    knn = ModelsUtil.get_trained_model(trainset, np.array(train_labels))
-    ret, result, neighbours, dist = knn.findNearest(np.array(testset), k=5)
-    print('result:', result.reshape(-1, 9)[0])
-
-# SIFT IS NOT WORKING VERY WELL
-def generator_demo2():
-    """Demo1: split data to train/test , then train KNN model on trainset then validate using test data. Features here
-    are extracted from image using SIFT"""
-    m_dataset = generate_numbers_dataset()
-    trainset = m_dataset[:-1]
-    testset = m_dataset[-1]
-    print(trainset.shape)
-    print(testset.shape)
-
-    # Generate features:
-    sift = cv.SIFT_create()
-    for digits_row in trainset:
-        for digit in digits_row:
-            # Convert image from float32 -> uint8 for SIFT
-            digit8bit = cv.normalize(digit, None, 0, 255, cv.NORM_MINMAX).astype(np.uint8)
-            # Applying SIFT
-            kp, des = sift.detectAndCompute(digit8bit, None)
-            if des is not None:
-                print('des type:', type(des), 'and length:', len(des[0]))
-                print(des)
-                img = cv.drawKeypoints(digit8bit, kp, digit)
-                cv.imshow('sift', img)
-                cv.waitKey(0)
     trainset = trainset.reshape(-1, 468).astype(np.float32)
     print('train data:', trainset.shape)
     testset = testset.reshape(-1, 468).astype(np.float32)

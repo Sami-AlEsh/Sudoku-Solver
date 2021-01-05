@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
-from Dataset import Generator
 from Utils import show
+from Dataset import Generator
 
 
 def get_opencv_train_test_data():

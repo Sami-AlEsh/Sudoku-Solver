@@ -108,7 +108,6 @@ if __name__ == '__main__':
     # vid.open("http://192.168.1.100:8080/video")
     print(f'CAMERA RES ({int(vid.get(cv.CAP_PROP_FRAME_WIDTH))}x{int(vid.get(cv.CAP_PROP_FRAME_HEIGHT))})')
 
-    # [skip frames] i = 0
     frame_title = 'CAMERA'
     pause = False
     solved = False
