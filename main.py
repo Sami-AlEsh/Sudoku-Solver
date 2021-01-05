@@ -162,7 +162,6 @@ if __name__ == '__main__':
                     solved_frame_count = solved_frame_count + 1
                     if solved_frame_count == solved_frame_limit:
                         solved = False
-                    cv.setWindowTitle(frame_title, 'CAMERA - SOLVED')
                     end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame,
                                                           numbers_dict, rotation)
                 else:
@@ -184,7 +183,14 @@ if __name__ == '__main__':
                             # print('Solved Sudoko:')
                             # print_board(solved_sudoko)
                             rotation = i
-                            cv.setWindowTitle(frame_title, 'CAMERA - SOLVED')
+                            if i == 0:
+                                cv.setWindowTitle(frame_title, 'CAMERA - SOLVED - UP')
+                            elif i == 1:
+                                cv.setWindowTitle(frame_title, 'CAMERA - SOLVED - LEFT')
+                            elif i == 2:
+                                cv.setWindowTitle(frame_title, 'CAMERA - SOLVED - DOWN')
+                            else:
+                                cv.setWindowTitle(frame_title, 'CAMERA - SOLVED - RIGHT')
                             end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame,
                                                                   numbers_dict, rotation)
                             break
