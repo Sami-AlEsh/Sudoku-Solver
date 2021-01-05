@@ -2,9 +2,8 @@ import operator
 import cv2 as cv
 import ModelsUtil
 import numpy as np
-from Validator import isValidSudoku
-# from Solver.slow_solve import solve, print_board
 from Solver.fast_solve import solve, print_board
+from Validator import isValidSudoku, NotValidBoard
 from Utils import show, equalize_image, normalize_sudoko_board, extract_digits, project_solution_on_frame
 
 
@@ -95,10 +94,6 @@ def extract_grid(digits_images, numbers_features):
 
 
 if __name__ == '__main__':
-    # Get one frame
-    # for path in ['Assets/sudoko.jpg', 'Assets/sudoko warped.jpg', 'Assets/sudokoP.jpg']:
-    # frame = cv.imread('Assets/sudokoP.jpg')
-
     # Load numbers for projection (32x32)
     numbers_dict = load_numbers()
 
@@ -114,6 +109,7 @@ if __name__ == '__main__':
     print(f'CAMERA RES ({int(vid.get(cv.CAP_PROP_FRAME_WIDTH))}x{int(vid.get(cv.CAP_PROP_FRAME_HEIGHT))})')
 
     # [skip frames] i = 0
+    frame_title = 'CAMERA'
     pause = False
     solved = False
     solved_frame_count = 0
@@ -122,8 +118,6 @@ if __name__ == '__main__':
     solved_sudoko = []
     sudoko_digits = []
     while True:
-        # [skip frames] i = i + 1 if i < 4 else 1
-
         # Get user input
         k = cv.waitKey(5)
         if k == ord(' '):  # Space for closing app
@@ -137,11 +131,6 @@ if __name__ == '__main__':
 
         # Capture the frame
         _, frame = vid.read()
-
-        # skip frames
-        # if i % 4 != 0:
-        #     cv.imshow('CAMERA', frame)
-        #     continue
 
         gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         # [DEBUG] show('frame', gray_frame)
@@ -169,6 +158,7 @@ if __name__ == '__main__':
                 solved_frame_count = solved_frame_count + 1
                 if solved_frame_count == solved_frame_limit:
                     solved = False
+                cv.setWindowTitle(frame_title, 'CAMERA - SOLVED')
                 end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame,
                                                       numbers_dict)
             else:
@@ -177,20 +167,19 @@ if __name__ == '__main__':
                 # print_board(sudoko_digits)
                 # print('--------------------------------------')
                 if not isValidSudoku(decoded_sudoko_digits):
-                    raise InterruptedError
+                    raise NotValidBoard
                 solved_sudoko = solve(sudoko_digits)
                 solved = True
                 solved_frame_count = 1
                 # print('Solved Sudoko:')
                 # print_board(solved_sudoko)
+                cv.setWindowTitle(frame_title, 'CAMERA - SOLVED')
                 end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame, numbers_dict)
-        except TypeError:
-            # print('board cant be solved!!')
-            end_frame = frame
-        except InterruptedError:
+        except (TypeError, InterruptedError, NotValidBoard, Exception):
             # print('Invalid Sudoku board!!')
+            cv.setWindowTitle(frame_title, 'CAMERA - INVALID SUDOKU BOARD')
             end_frame = frame
-        cv.imshow('CAMERA', end_frame)
+        cv.imshow(frame_title, end_frame)
 
     # Camera Closed
     vid.release()

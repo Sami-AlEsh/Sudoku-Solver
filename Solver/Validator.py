@@ -34,3 +34,9 @@ def isValidSudoku(board):
 #    [7, 8, 6, 2, 3, 5, 9, 1, 4],
 #    [1, 5, 4, 7, 9, 6, 8, 2, 3],
 #    [2, 3, 9, 8, 4, 1, 5, 6, 7]]))
+
+
+class NotValidBoard(OSError):
+    """ Not valid sudoku board. """
+    def __init__(self, *args, **kwargs):  # real signature unknown
+        pass
