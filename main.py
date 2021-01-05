@@ -2,6 +2,7 @@ import operator
 import cv2 as cv
 import ModelsUtil
 import numpy as np
+from Validator import isValidSudoku
 # from Solver.slow_solve import solve, print_board
 from Solver.fast_solve import solve, print_board
 from Utils import show, equalize_image, normalize_sudoko_board, extract_digits, project_solution_on_frame
@@ -114,7 +115,12 @@ if __name__ == '__main__':
 
     # [skip frames] i = 0
     pause = False
+    solved = False
+    solved_frame_count = 0
+    solved_frame_limit = 5
     end_frame = np.zeros((288, 288), dtype=np.uint8)
+    solved_sudoko = []
+    sudoko_digits = []
     while True:
         # [skip frames] i = i + 1 if i < 4 else 1
 
@@ -154,19 +160,30 @@ if __name__ == '__main__':
         square_gray_frame = equalize_image(square_gray_frame, 'CLAHE')
         show('cropped warped re-sized gray frame', square_gray_frame, False)
 
-        # Extract Sudoku numbers (Remove grid lines , Blur(Gaussian OR Bilateral), Threshold, Opening(2, 2))
+        # Extract Sudoku numbers (Remove grid lines , Blur(Gaussian OR Bilateral),Threshold,Opening(2, 2),Closing(3, 3)
         sudoku_board = normalize_sudoko_board(square_gray_frame, fast=True)
         show('normalized board', sudoku_board, False)
 
         try:
-            sudoko_digits = extract_digits(sudoku_board, model)
-            # print('Extracted Sudoko:')
-            # print_board(sudoko_digits)
-            # print('--------------------------------------')
-            solved_sudoko = solve(sudoko_digits)
-            # print('Solved Sudoko:')
-            # print_board(solved_sudoko)
-            end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame, numbers_dict)
+            if solved:
+                solved_frame_count = solved_frame_count + 1
+                if solved_frame_count == solved_frame_limit:
+                    solved = False
+                end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame,
+                                                      numbers_dict)
+            else:
+                decoded_sudoko_digits, sudoko_digits = extract_digits(sudoku_board, model)
+                # print('Extracted Sudoko:')
+                # print_board(sudoko_digits)
+                # print('--------------------------------------')
+                if not isValidSudoku(decoded_sudoko_digits):
+                    raise InterruptedError
+                solved_sudoko = solve(sudoko_digits)
+                solved = True
+                solved_frame_count = 1
+                # print('Solved Sudoko:')
+                # print_board(solved_sudoko)
+                end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame, numbers_dict)
         except TypeError:
             # print('board cant be solved!!')
             end_frame = frame

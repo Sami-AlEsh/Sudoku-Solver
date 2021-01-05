@@ -85,6 +85,7 @@ def normalize_sudoko_board(square_gray_frame, fast):
 
     # Remove white-noise-points by opening
     sudoko_board = cv.morphologyEx(sudoko_board, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT, (2, 2)))
+    sudoko_board = cv.morphologyEx(sudoko_board, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, (3, 3)))
     return sudoko_board
 
 
@@ -395,9 +396,11 @@ def guess_digit_intersect(digit_image):
     return digit_number
 
 def extract_digits(sudoko_board, model):
+    decoded_digits = []
     digits = []
     rows = np.vsplit(sudoko_board, 9)
     for row in rows:
+        decoded_row_digits = []
         row_digits = []
         cols = np.hsplit(row, 9)
         numbers_in_row_count = 0
@@ -408,11 +411,13 @@ def extract_digits(sudoko_board, model):
             if len(digit) != 0:  # if number found check flag
                 numbers_in_row_count = numbers_in_row_count + 1
             row_digits.append(digit)
+            decoded_row_digits.append(0 if len(digit) == 0 else digit[0])
         # Performance check
         if numbers_in_row_count < 1:
             raise InterruptedError
         digits.append(row_digits)
-    return digits
+        decoded_digits.append(decoded_row_digits)
+    return decoded_digits, digits
 
 def extract_numbers(image):
     # Load image, grayscale, and adaptive threshold
