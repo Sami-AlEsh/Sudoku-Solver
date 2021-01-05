@@ -116,6 +116,7 @@ if __name__ == '__main__':
     end_frame = np.zeros((288, 288), dtype=np.uint8)
     solved_sudoko = []
     sudoko_digits = []
+    rotation = 0
     while True:
         # Get user input
         k = cv.waitKey(5)
@@ -159,25 +160,43 @@ if __name__ == '__main__':
                     solved = False
                 cv.setWindowTitle(frame_title, 'CAMERA - SOLVED')
                 end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame,
-                                                      numbers_dict)
+                                                      numbers_dict, rotation)
             else:
-                decoded_sudoko_digits, sudoko_digits = extract_digits(sudoku_board, model)
-                # print('Extracted Sudoko:')
-                # print_board(sudoko_digits)
-                # print('--------------------------------------')
-                if not isValidSudoku(decoded_sudoko_digits):
-                    raise NotValidBoard
-                solved_sudoko = solve(sudoko_digits)
-                solved = True
-                solved_frame_count = 1
-                # print('Solved Sudoko:')
-                # print_board(solved_sudoko)
-                cv.setWindowTitle(frame_title, 'CAMERA - SOLVED')
-                end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame, numbers_dict)
+                boards = [sudoku_board,
+                          cv.rotate(sudoku_board, cv.ROTATE_90_CLOCKWISE),
+                          cv.rotate(sudoku_board, cv.ROTATE_180),
+                          cv.rotate(sudoku_board, cv.ROTATE_90_COUNTERCLOCKWISE)]
+                for i in range(4):
+                    try:
+                        decoded_sudoko_digits, sudoko_digits = extract_digits(boards[i], model)
+                        # print('Extracted Sudoko:')
+                        # print_board(sudoko_digits)
+                        # print('--------------------------------------')
+                        if not isValidSudoku(decoded_sudoko_digits):
+                            raise NotValidBoard
+                        solved_sudoko = solve(sudoko_digits)
+                        solved = True
+                        solved_frame_count = 1
+                        # print('Solved Sudoko:')
+                        # print_board(solved_sudoko)
+                        rotation = i
+                        cv.setWindowTitle(frame_title, 'CAMERA - SOLVED')
+                        end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame,
+                                                              numbers_dict, rotation)
+                        break
+                    except (TypeError, InterruptedError, NotValidBoard, Exception):
+                        if i < 3:
+                            # board{i} is not sudoku or is not valid to solve!
+                            continue
+                        else:
+                            # All boards is not a sudoku or are not valid to solve!
+                            raise Exception
         except (TypeError, InterruptedError, NotValidBoard, Exception):
             # print('Invalid Sudoku board!!')
             cv.setWindowTitle(frame_title, 'CAMERA - INVALID SUDOKU BOARD')
             end_frame = frame
+            rotation = 0
+
         cv.imshow(frame_title, end_frame)
 
     # Camera Closed

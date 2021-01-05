@@ -216,7 +216,7 @@ blockStride = (8, 8)
 cellSize = (4, 4)
 nbins = 9
 hog = cv.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
-def guess_digit_knn(digit_image, model, min_contour_area):
+def guess_digit_knn(digit_image, model):
     # Check if cell is empty
     contours, _ = cv.findContours(digit_image, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=cv.contourArea, reverse=True)
@@ -403,7 +403,7 @@ def extract_digits(sudoko_board, model):
         cols = np.hsplit(row, 9)
         numbers_in_row_count = 0
         for digit_image in cols:
-            digit = guess_digit_knn(digit_image, model, min_contour_area=10)
+            digit = guess_digit_knn(digit_image, model)
             # digit = guess_digit_svm(digit_image, model)
             # digit = guess_digit_intersect(digit_image)
             if len(digit) != 0:  # if number found check flag
@@ -418,7 +418,7 @@ def extract_digits(sudoko_board, model):
     return decoded_digits, digits
 
 
-def project_solution_on_frame(resultion, solved_sudoko, digits_list, corners, frame, numbers):
+def project_solution_on_frame(resultion, solved_sudoko, digits_list, corners, frame, numbers, rotation=-1):
     def generate_solved_square_image(solved_sudoko, digits_list, numbers):
         image = np.zeros((288, 288), dtype=np.uint8)
         for i in range(9):
@@ -442,6 +442,15 @@ def project_solution_on_frame(resultion, solved_sudoko, digits_list, corners, fr
 
     # Generate square image with digits_list (288x288)
     image = generate_solved_square_image(solved_sudoko, digits_list, numbers)
+
+    # Rotate solved image according to rotation param
+    if rotation != -1:
+        if rotation == 1:
+            image = cv.rotate(image, cv.ROTATE_90_CLOCKWISE)
+        if rotation == 2:
+            image = cv.rotate(image, cv.ROTATE_180)
+        if rotation == 3:
+            image = cv.rotate(image, cv.ROTATE_90_COUNTERCLOCKWISE)
 
     # Warp solved image to original frame
     warped_board = warp_board(corners, image, resultion)
