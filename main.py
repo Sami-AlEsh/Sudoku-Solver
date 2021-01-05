@@ -166,9 +166,9 @@ if __name__ == '__main__':
                                                           numbers_dict, rotation)
                 else:
                     boards = [sudoku_board,
-                              cv.rotate(sudoku_board, cv.ROTATE_90_CLOCKWISE),
+                              cv.rotate(sudoku_board, cv.ROTATE_90_CLOCKWISE),  # LEFT, but RIGHT in real world
                               cv.rotate(sudoku_board, cv.ROTATE_180),
-                              cv.rotate(sudoku_board, cv.ROTATE_90_COUNTERCLOCKWISE)]
+                              cv.rotate(sudoku_board, cv.ROTATE_90_COUNTERCLOCKWISE)]  # RIGHT, LEFT in real world
                     for i in range(4):
                         try:
                             decoded_sudoko_digits, sudoko_digits = extract_digits(boards[i], model)
@@ -191,8 +191,8 @@ if __name__ == '__main__':
                                 cv.setWindowTitle(frame_title, 'CAMERA - SOLVED - DOWN')
                             else:
                                 cv.setWindowTitle(frame_title, 'CAMERA - SOLVED - RIGHT')
-                            end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners, frame,
-                                                                  numbers_dict, rotation)
+                            end_frame = project_solution_on_frame(resulution, solved_sudoko, sudoko_digits, corners,
+                                                                  frame, numbers_dict, rotation)
                             break
                         except (TypeError, InterruptedError, NotValidBoard, Exception):
                             if i < 3:

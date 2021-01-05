@@ -443,13 +443,13 @@ def project_solution_on_frame(resultion, solved_sudoko, digits_list, corners, fr
     # Generate square image with digits_list (288x288)
     image = generate_solved_square_image(solved_sudoko, digits_list, numbers)
 
-    # Rotate solved image according to rotation param
+    # Rotate solved image (NOTE: RIGHT&LEFT are swapped here cuz they're inverted in real world)
     if rotation != -1:
-        if rotation == 1:
+        if rotation == 3:
             image = cv.rotate(image, cv.ROTATE_90_CLOCKWISE)
         if rotation == 2:
             image = cv.rotate(image, cv.ROTATE_180)
-        if rotation == 3:
+        if rotation == 1:
             image = cv.rotate(image, cv.ROTATE_90_COUNTERCLOCKWISE)
 
     # Warp solved image to original frame
