@@ -99,13 +99,12 @@ if __name__ == '__main__':
 
     # Init trained Recogntion Model
     model = ModelsUtil.get_trained_knn()
-    # modle = ModelsUtil.get_trained_svm()
 
     vid = cv.VideoCapture(0, cv.CAP_DSHOW)
     resulution = (640, 480)
     vid.set(cv.CAP_PROP_FRAME_WIDTH, resulution[0])
     vid.set(cv.CAP_PROP_FRAME_HEIGHT, resulution[1])
-    # vid.open("http://192.168.1.100:8080/video")
+    # vid.open("http://192.168.1.100:8080/video")  # if you want to use ip camera
     print(f'CAMERA RES ({int(vid.get(cv.CAP_PROP_FRAME_WIDTH))}x{int(vid.get(cv.CAP_PROP_FRAME_HEIGHT))})')
 
     frame_title = 'CAMERA'

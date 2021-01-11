@@ -58,9 +58,8 @@ def get_grid_lines(gray_frame):
         return vertical
 
     ############## END Inner functions ##############
-    # thresh = cv.adaptiveThreshold(gray_frame, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY_INV, 15, -2)
     thresh = cv.adaptiveThreshold(gray_frame, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY_INV, 33, -1)
-    return (get_horizontal_lines(thresh), get_vertical_lines(thresh))
+    return get_horizontal_lines(thresh), get_vertical_lines(thresh)
 
 
 def normalize_sudoko_board(square_gray_frame, fast):
@@ -85,25 +84,6 @@ def normalize_sudoko_board(square_gray_frame, fast):
     sudoko_board = cv.morphologyEx(sudoko_board, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT, (2, 2)))
     sudoko_board = cv.morphologyEx(sudoko_board, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, (3, 3)))
     return sudoko_board
-
-
-def find_number_bound(digit_img):
-    # Note this functions assumes there is a number(white area) in image
-    xs = digit_img.shape[1]
-    xe = 0
-    ys = digit_img.shape[0]
-    ye = 0
-    for i in range(digit_img.shape[1]):
-        for j in range(digit_img.shape[0]):
-            if 0 < digit_img[i][j] and i < xs:
-                xs = i
-            if 0 < digit_img[i][j] and i > xe:
-                xe = i
-            if 0 < digit_img[i][j] and j < ys:
-                ys = j
-            if 0 < digit_img[i][j] and j > ye:
-                ye = j
-    return xs, xe, ys, ye
 
 
 def find_number_bound_enhanced(digit_img):
@@ -260,138 +240,6 @@ def guess_digit_knn(digit_image, model):
     # cv.destroyWindow('digit box')
     return digit_number
 
-def guess_digit_svm(digit_image, model):
-    def deskew(img, SZ=20, affine_flags=cv.WARP_INVERSE_MAP | cv.INTER_LINEAR):
-        """Before finding the HOG, we deskew the image using its second order moments. So we first define a function
-        deskew() which takes a digit image and deskew it"""
-        m = cv.moments(img)
-        if abs(m['mu02']) < 1e-2:
-            return img.copy()
-        skew = m['mu11'] / m['mu02']
-        M = np.float32([[1, skew, -0.5 * SZ * skew], [0, 1, 0]])
-        img = cv.warpAffine(img, M, (SZ, SZ), flags=affine_flags)
-        return img
-
-    def hog(img, bin_n=16):
-        gx = cv.Sobel(img, cv.CV_32F, 1, 0)
-        gy = cv.Sobel(img, cv.CV_32F, 0, 1)
-        mag, ang = cv.cartToPolar(gx, gy)
-
-        # quantizing binvalues in (0...16)
-        bins = np.int32(bin_n * ang / (2 * np.pi))
-
-        # Divide to 4 sub-squares
-        bin_cells = bins[:10, :10], bins[10:, :10], bins[:10, 10:], bins[10:, 10:]
-        mag_cells = mag[:10, :10], mag[10:, :10], mag[:10, 10:], mag[10:, 10:]
-        hists = [np.bincount(b.ravel(), m.ravel(), bin_n) for b, m in zip(bin_cells, mag_cells)]
-        hist = np.hstack(hists)
-        return hist
-
-    # Check if cell is empty
-    contours, _ = cv.findContours(digit_image, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-    contours = sorted(contours, key=cv.contourArea, reverse=True)
-    try:
-        [x, y, w, h] = cv.boundingRect(contours[0])
-        flag = w > 6 and h > 10
-    except:
-        flag = False
-
-    # if len(contours) > 0 and cv.contourArea(contours[0]) > min_contour_area and w > 10 and h > 10:
-    if flag:
-        # Remove other small contours:
-        if len(contours) > 1:
-            mask = np.ones(digit_image.shape[:2], dtype=np.uint8) * 255
-            # f = digit_image.copy()
-            # f = cv.cvtColor(f, cv.COLOR_GRAY2BGR)
-            cv.drawContours(mask, contours[1:], -1, color=(0, 0, 255), thickness=3)
-            digit_image = cv.bitwise_and(digit_image, digit_image, mask=mask)
-            # cv.imshow('mask', mask)
-            # cv.imshow('digit image', digit_image)
-            # cv.waitKey(0)
-            # cv.destroyWindow('contours')
-
-        # Normalize digit image
-        centerized_resized_digit_image = center_resize_digit_in_image(digit_image, padding=2)
-
-        # Extract features from image
-        digit_feature = hog(deskew(centerized_resized_digit_image)).reshape(1, 64).astype(np.float32)
-
-        # Predict result
-        ret, result = model.predict(np.array(digit_feature))
-        digit_number = [int(result[0][0])]
-    else:
-        # Contour is empty or too small => empty cell
-        digit_number = []
-    # print('cell>', digit_number)
-    # show('[DEBUG]', digit_image)
-    # cv.destroyWindow('digit box')
-    return digit_number
-
-def load_templates():
-    numbers = []
-    for i in range(1, 10):
-        num = cv.imread(f"Assets/Templates/{i}.jpg", cv.IMREAD_GRAYSCALE)
-        num = cv.resize(num, (24, 32), interpolation=cv.INTER_NEAREST)
-        _, num = cv.threshold(num, 50, 255, cv.THRESH_BINARY_INV)
-        padded = np.hstack((np.zeros((32, 4)), num))
-        padded = np.hstack((padded, np.zeros((32, 4))))
-        # show('p', padded)
-        numbers.append(padded)
-    numbers = np.array(numbers)
-    return numbers
-
-templates = load_templates()
-def guess_digit_intersect(digit_image):
-    # Check if cell is empty
-    contours, _ = cv.findContours(digit_image, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-    contours = sorted(contours, key=cv.contourArea, reverse=True)
-    try:
-        [x, y, w, h] = cv.boundingRect(contours[0])
-        flag = w > 6 and h > 10
-    except:
-        flag = False
-
-    # if len(contours) > 0 and cv.contourArea(contours[0]) > min_contour_area and w > 10 and h > 10:
-    if flag:
-        # Remove other small contours:
-        if len(contours) > 1:
-            mask = np.ones(digit_image.shape[:2], dtype=np.uint8) * 255
-            # f = digit_image.copy()
-            # f = cv.cvtColor(f, cv.COLOR_GRAY2BGR)
-            cv.drawContours(mask, contours[1:], -1, color=(0, 0, 255), thickness=3)
-            digit_image = cv.bitwise_and(digit_image, digit_image, mask=mask)
-            # cv.imshow('mask', mask)
-            # cv.imshow('digit image', digit_image)
-            # cv.waitKey(0)
-            # cv.destroyWindow('contours')
-
-        # Normalize digit image
-        centerized_resized_digit_image = center_resize_digit_in_image(digit_image, padding=2)
-        show('a', centerized_resized_digit_image)
-        # centerized_resized_digit_image = cv.threshold(centerized_resized_digit_image, 200, 1, type=cv.THRESH_BINARY)
-        # show('a', centerized_resized_digit_image)
-
-        # Predict result
-        matches = []
-        for template in templates:
-            apply_template = cv.bitwise_and(template.astype(np.float32), centerized_resized_digit_image.astype(np.float32))
-            match_percent = sum(map(sum, apply_template // 255))
-            # print(match_percent)
-            # show('t', apply_template)
-            # match_percent = np.sum(apply_template//255) / 32*32
-            # print(match_percent)
-            matches.append(match_percent)
-
-        digit_number = [np.argmax(matches) + 1]
-        print('-------------------\n' + str(digit_number[0]))
-        show('digit', centerized_resized_digit_image)
-    else:
-        # Contour is empty or too small => empty cell
-        digit_number = []
-    # print('cell>', digit_number)
-    # show('[DEBUG]', digit_image)
-    # cv.destroyWindow('digit box')
-    return digit_number
 
 def extract_digits(sudoko_board, model):
     decoded_digits = []

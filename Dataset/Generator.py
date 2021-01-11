@@ -1,7 +1,5 @@
-import ModelsUtil
 import cv2 as cv
 import numpy as np
-from Utils import show
 
 
 def generate_numbers_dataset():
@@ -72,77 +70,3 @@ def generate_numbers_dataset():
     dataset = np.array(dataset)
     print('generated dataset shape:', dataset.shape)
     return dataset
-
-# Image itself as a feature
-def generator_demo1():
-    """Demo1: split data to train/test , then train KNN model on trainset then validate using test data. Features
-    here are the image itself"""
-    m_dataset = generate_numbers_dataset()
-    trainset = m_dataset[:-1]
-    testset = m_dataset[-1]
-    print(trainset.shape)
-    print(testset.shape)
-
-    # Generate features:
-    trainset = trainset.reshape(-1, 468).astype(np.float32)
-    print('train data:', trainset.shape)
-    testset = testset.reshape(-1, 468).astype(np.float32)
-    print('test data:', testset.shape)
-
-    # Testing:
-    labels = np.arange(1, 10)
-    train_labels = []
-    for ls in [labels] * 14:
-        for item in ls:
-            train_labels.append([item])
-
-    knn = ModelsUtil.get_trained_model(trainset, np.array(train_labels))
-    ret, result, neighbours, dist = knn.findNearest(np.array(testset), k=5)
-    print('result:', result.reshape(-1, 9)[0])
-
-# HOG as image features
-def generator_demo3():
-    """Demo2: split data to train/test , then train KNN model on trainset then validate using test data. Features here
-    are extracted from image using HOG"""
-    m_dataset = generate_numbers_dataset()
-
-    # Generate features:
-    features_set = []
-    winSize = (32, 32)
-    blockSize = (8, 8)
-    blockStride = (8, 8)
-    cellSize = (4, 4)
-    nbins = 9
-    hog = cv.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
-    for digits_row in m_dataset:
-        for digit in digits_row:
-            # Convert image from float32 -> uint8 for HOG
-            digit8bit = cv.normalize(digit, None, 0, 255, cv.NORM_MINMAX).astype(np.uint8)
-
-            # Applying HOG (Return array by length of 576)
-            h = hog.compute(digit8bit)
-            features_set.append(h)
-
-    features_set = np.array(features_set).reshape(-1, 576).astype(np.float32)
-    print('dataset features shape:', features_set.shape)
-
-    trainset = features_set[:-9]
-    testset = features_set[-9:]
-    print('train set:', trainset.shape)
-    print('test set:', testset.shape)
-
-    # Testing:
-    labels = np.arange(1, 10)
-    train_labels = []
-    for ls in [labels] * 14:
-        for item in ls:
-            train_labels.append([item])
-
-    knn = ModelsUtil.get_trained_model(trainset, np.array(train_labels))
-    ret, result, neighbours, dist = knn.findNearest(np.array(testset), k=5)
-    print('result:', result.reshape(-1, 9)[0])
-
-
-# [DEBUG] Show Demos:
-# generator_demo3()
-# generator_demo1()
